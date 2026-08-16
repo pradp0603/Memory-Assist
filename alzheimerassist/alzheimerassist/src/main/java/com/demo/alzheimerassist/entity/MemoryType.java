@@ -20,5 +20,10 @@ public enum MemoryType {
 
     EMERGENCY,
 
+    EMAIL,
+
+    REMINDER,
+
     OTHER
+
 }

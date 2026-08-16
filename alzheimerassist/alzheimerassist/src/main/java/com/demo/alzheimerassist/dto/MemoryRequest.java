@@ -8,7 +8,7 @@ public class MemoryRequest {
 
     private Long userId;
 
-    private MemoryType type;
+    private MemoryType memoryType;
 
     private String title;
 

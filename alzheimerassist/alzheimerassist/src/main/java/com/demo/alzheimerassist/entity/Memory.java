@@ -28,10 +28,11 @@ public class Memory {
 
     private LocalDateTime createdDate;
 
+    private LocalDateTime updatedDate;
+
     @PrePersist
     public void prePersist() {
         createdDate = LocalDateTime.now();
     }
 
-    // Getters and Setters
 }

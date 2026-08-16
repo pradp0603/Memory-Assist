@@ -13,6 +13,7 @@ import com.demo.alzheimerassist.repository.MemoryRepository;
 import com.demo.alzheimerassist.service.MemoryService;
 import com.demo.alzheimerassist.entity.MemoryType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -20,12 +21,12 @@ import java.util.stream.Collectors;
 @Service
 public class MemoryServiceImpl implements MemoryService {
 
-    private final MemoryRepository repository;
+    private final MemoryRepository memoryRepository;
     private final UserRepository userRepository;
 
-    public MemoryServiceImpl(MemoryRepository repository, UserRepository userRepository) {
+    public MemoryServiceImpl(MemoryRepository memoryRepository, UserRepository userRepository) {
 
-        this.repository = repository;
+        this.memoryRepository = memoryRepository;
         this.userRepository = userRepository;
     }
 
@@ -33,33 +34,50 @@ public class MemoryServiceImpl implements MemoryService {
     @Override
     public MemoryResponse saveMemory(MemoryRequest request) {
 
-        Memory memory = new Memory();
+        Memory memory;
 
-        User user = userRepository.findById(request.getUserId())
-                        .orElseThrow(() ->
-                                new ResourceNotFoundException("User not found"));
+		if (request.getMemoryType() == MemoryType.OBJECT_LOCATION) {
 
-        memory.setUser(user);
+			memory = memoryRepository.findByUser_IdAndTypeAndTitleIgnoreCase(
+							request.getUserId(),
+							request.getMemoryType(),
+							request.getTitle())
+					.orElse(new Memory());
 
-        memory.setType(request.getType());
+		} else {
+
+			memory = memoryRepository.findByUser_IdAndType(
+							request.getUserId(),
+							request.getMemoryType())
+					.orElse(new Memory());
+		}
+
+        if (memory.getId() == null) {
+
+            User user = userRepository.findById(request.getUserId())
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("User not found"));
+
+            memory.setUser(user);
+            memory.setCreatedDate(LocalDateTime.now());
+
+        }
+
+        memory.setType(request.getMemoryType());
+
         memory.setTitle(request.getTitle());
         memory.setValue(request.getValue());
+        memory.setUpdatedDate(LocalDateTime.now());
 
-        Memory saved = repository.save(memory);
+        Memory saved = memoryRepository.save(memory);
 
-        MemoryResponse response = new MemoryResponse();
+        return convertToResponse(saved);
 
-        response.setId(saved.getId());
-        response.setType(saved.getType());
-        response.setTitle(saved.getTitle());
-        response.setValue(saved.getValue());
-
-        return response;
     }
 
     @Override
     public List<MemoryResponse> getAllMemories(Long userId) {
-        List<Memory> memories = repository.findByUser_Id(userId);
+        List<Memory> memories = memoryRepository.findByUser_Id(userId);
 
         return memories.stream()
                 .map(this::convertToResponse)
@@ -68,24 +86,52 @@ public class MemoryServiceImpl implements MemoryService {
 
     @Override
     public MemoryResponse getMemory(Long userId, MemoryType type) {
+        return null;
+    }
 
-        Optional<Memory> memory = repository.findByUser_IdAndType(userId, type);
+    @Override
+    public MemoryResponse getMemory(Long userId, MemoryType memoryType, String title) {
 
-        return memory.map(this::convertToResponse).orElse(null);
+        Memory memory;
+
+        if (memoryType == MemoryType.OBJECT_LOCATION || memoryType == MemoryType.OTHER) {
+
+            memory = memoryRepository
+                    .findByUser_IdAndTypeAndTitleIgnoreCase(
+                            userId,
+                            memoryType,
+                            title)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Memory not found"));
+
+        } else {
+
+            memory = memoryRepository
+                    .findByUser_IdAndType(
+                            userId,
+                            memoryType)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Memory not found"));
+        }
+
+        if (memory == null) {
+            return null;
+        }
+        return convertToResponse(memory);
     }
 
     @Override
     public MemoryResponse updateMemory(Long id, MemoryRequest request) {
 
-        Memory memory = repository.findById(id)
+        Memory memory = memoryRepository.findById(id)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Memory not found"));
 
-        memory.setType(request.getType());
+        memory.setType(request.getMemoryType());
         memory.setTitle(request.getTitle());
         memory.setValue(request.getValue());
 
-        Memory updated = repository.save(memory);
+        Memory updated = memoryRepository.save(memory);
 
         return convertToResponse(updated);
     }
@@ -93,13 +139,13 @@ public class MemoryServiceImpl implements MemoryService {
     @Override
     public void deleteMemory(Long id) {
 
-        if(!repository.existsById(id)) {
+        if(!memoryRepository.existsById(id)) {
 
             throw new ResourceNotFoundException("Memory not found");
 
         }
 
-        repository.deleteById(id);
+        memoryRepository.deleteById(id);
 
     }
 
@@ -120,4 +166,43 @@ public class MemoryServiceImpl implements MemoryService {
 
         return response;
     }
+
+    @Override
+    public MemoryResponse getObjectLocation(Long userId, String objectName) {
+
+        Memory memory = memoryRepository.findByUser_IdAndTypeAndTitleIgnoreCase(userId, MemoryType.OBJECT_LOCATION, objectName)
+                        .orElseThrow(() ->new ResourceNotFoundException("Object location not found"));
+
+        return convertToResponse(memory);
+    }
+
+    @Override
+    public void deleteMemory(Long userId, MemoryType memoryType, String title) {
+
+        Memory memory;
+
+        if (memoryType == MemoryType.OBJECT_LOCATION
+                || memoryType == MemoryType.OTHER) {
+
+            memory = memoryRepository
+                    .findByUser_IdAndTypeAndTitleIgnoreCase(
+                            userId,
+                            memoryType,
+                            title)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Memory not found"));
+
+        } else {
+
+            memory = memoryRepository
+                    .findByUser_IdAndType(
+                            userId,
+                            memoryType)
+                    .orElseThrow(() ->
+                            new ResourceNotFoundException("Memory not found"));
+        }
+
+        memoryRepository.delete(memory);
+    }
+
 }

@@ -15,5 +15,4 @@ public class MemoryResponse {
 
     private String value;
 
-    // Getters and Setters
 }

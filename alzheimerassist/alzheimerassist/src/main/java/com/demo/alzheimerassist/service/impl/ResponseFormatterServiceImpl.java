@@ -10,8 +10,7 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class ResponseFormatterServiceImpl
-        implements ResponseFormatterService {
+public class ResponseFormatterServiceImpl implements ResponseFormatterService {
 
     @Override
     public ChatResponse formatMemory(MemoryResponse response) {
@@ -112,6 +111,62 @@ public class ResponseFormatterServiceImpl
 
         return new ChatResponse(message);
 
+    }
+
+    @Override
+    public ChatResponse memorySaved(MemoryResponse memory) {
+
+        return new ChatResponse(
+                "I've saved your "
+                        + memory.getTitle().toLowerCase() + "."
+        );
+    }
+
+    @Override
+    public ChatResponse memoryRetrieved(MemoryResponse memory) {
+
+        return new ChatResponse(
+                "Your "
+                        + memory.getTitle().toLowerCase()
+                        + " is "
+                        + memory.getValue()
+        );
+    }
+
+    @Override
+    public ChatResponse notFound(String item) {
+
+        return new ChatResponse(
+                "I couldn't find your " + item + "."
+        );
+    }
+
+    @Override
+    public ChatResponse todaysReminders(List<ReminderResponse> reminders) {
+
+        if (reminders.isEmpty()) {
+            return new ChatResponse("You have no reminders today.");
+        }
+
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("Today's reminders:\n\n");
+
+        for (ReminderResponse reminder : reminders) {
+
+            builder.append("• ");
+
+            builder.append(reminder.getReminderText());
+
+            builder.append(" at ");
+
+            builder.append(
+                    reminder.getReminderDateTime().toLocalTime());
+
+            builder.append("\n");
+        }
+
+        return new ChatResponse(builder.toString());
     }
 
 }

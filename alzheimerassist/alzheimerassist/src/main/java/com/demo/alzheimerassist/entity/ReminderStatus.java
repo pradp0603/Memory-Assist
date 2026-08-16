@@ -4,6 +4,8 @@ public enum ReminderStatus {
 
     PENDING,
 
-    COMPLETED
+    COMPLETED,
+
+    MISSED
 
 }

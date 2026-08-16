@@ -18,6 +18,8 @@ public class ReminderRequest {
 
     private RepeatType repeatType;
 
+    private String reminderText;
+
     public ReminderRequest() {
     }
 

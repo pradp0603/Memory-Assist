@@ -2,6 +2,9 @@ package com.demo.alzheimerassist.entity;
 
 import jakarta.persistence.*;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 @Entity
 @Table(name = "contacts")
 public class Contact {
@@ -26,6 +29,16 @@ public class Contact {
     private String email;
 
     private boolean emergencyContact;
+
+    public LocalDateTime getCreatedDate() {
+        return createdDate;
+    }
+
+    public void setCreatedDate(LocalDateTime createdDate) {
+        this.createdDate = createdDate;
+    }
+
+    private LocalDateTime createdDate;
 
     public Contact() {
     }

@@ -1,7 +1,7 @@
 package com.demo.alzheimerassist.entity;
 
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -9,7 +9,11 @@ import java.util.List;
 
 @Entity
 @Table(name = "users")
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class User {
 
     @Id
@@ -26,6 +30,9 @@ public class User {
     private String password;
 
     private Integer age;
+
+    /*@Column(nullable = false, unique = true)
+    private String username;*/
 
     private LocalDateTime createdDate;
 
@@ -49,7 +56,6 @@ public class User {
         createdDate = LocalDateTime.now();
     }
 
-    public User() {
-    }
+
 
 }

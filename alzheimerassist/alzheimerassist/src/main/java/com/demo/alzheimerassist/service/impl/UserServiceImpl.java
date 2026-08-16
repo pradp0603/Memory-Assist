@@ -1,5 +1,6 @@
 package com.demo.alzheimerassist.service.impl;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.demo.alzheimerassist.dto.RegisterRequest;
@@ -12,8 +13,12 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository repository;
 
-    public UserServiceImpl(UserRepository repository) {
+    private final PasswordEncoder passwordEncoder;
+
+    public UserServiceImpl(UserRepository repository, PasswordEncoder passwordEncoder) {
+
         this.repository = repository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
@@ -27,7 +32,7 @@ public class UserServiceImpl implements UserService {
 
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
-        user.setPassword(request.getPassword()); // We'll hash passwords later
+        user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setAge(request.getAge());
 
         repository.save(user);

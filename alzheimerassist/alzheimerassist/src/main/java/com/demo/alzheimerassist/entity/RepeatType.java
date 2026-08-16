@@ -8,6 +8,8 @@ public enum RepeatType {
 
     WEEKLY,
 
-    MONTHLY
+    MONTHLY,
+
+    YEARLY
 
 }

@@ -21,4 +21,12 @@ public interface ResponseFormatterService {
 
     ChatResponse formatSuccess(String message);
 
+    ChatResponse memorySaved(MemoryResponse memory);
+
+    ChatResponse memoryRetrieved(MemoryResponse memory);
+
+    ChatResponse notFound(String item);
+
+    ChatResponse todaysReminders(List<ReminderResponse> reminders);
+
 }

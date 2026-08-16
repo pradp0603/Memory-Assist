@@ -21,6 +21,7 @@ public class ReminderResponse {
 
     private ReminderStatus status;
 
+    private String reminderText;
 
 
 }

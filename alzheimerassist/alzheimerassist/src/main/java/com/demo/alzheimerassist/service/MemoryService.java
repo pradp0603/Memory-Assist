@@ -16,10 +16,16 @@ public interface MemoryService {
 
     MemoryResponse getMemory(Long userId, MemoryType type);
 
+    MemoryResponse getMemory(Long userId, MemoryType type, String title);
+
     MemoryResponse updateMemory(Long id, MemoryRequest request);
 
     void deleteMemory(Long id);
 
     Optional<Memory> findByUser_IdAndTitleIgnoreCase(Long userId, String title);
+
+    MemoryResponse getObjectLocation(Long userId, String objectName);
+
+    void deleteMemory(Long userId, MemoryType memoryType, String title);
 
 }
