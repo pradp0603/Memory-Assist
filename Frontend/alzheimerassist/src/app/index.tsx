@@ -1,5 +1,4 @@
 import React, {
-  useCallback,
   useEffect,
   useRef,
   useState,
@@ -27,7 +26,7 @@ import {
   useSpeechRecognitionEvent,
 } from "expo-speech-recognition";
 
-
+import * as Speech from "expo-speech";
 
 import {
   sendChatMessage,
@@ -63,91 +62,63 @@ export default function ChatScreen() {
     setRecognizing,
   ] = useState(false);
 
-  /*
-   * Prevent duplicate final voice
-   * submissions.
-   */
   const voiceSubmittedRef =
     useRef(false);
 
-  /*
-   * Chat ScrollView reference.
-   */
   const scrollViewRef =
-    useRef<ScrollView>(null);
+  useRef<ScrollView>(null);
+
+  const scrollToBottom = (
+  animated = true
+) => {
+  requestAnimationFrame(() => {
+    scrollViewRef.current?.scrollToEnd({
+      animated,
+    });
+  });
+};
 
   /*
-   * Scroll to latest message.
+   * Read aloud exactly the same assistant
+   * response that is displayed in chat.
+   *
+   * Speech errors are caught here so they
+   * can never break the chat request flow.
    */
-  const scrollToBottom = useCallback(
-    (animated = true) => {
-      requestAnimationFrame(() => {
-        scrollViewRef.current?.scrollToEnd({
-          animated,
-        });
+  const speakAssistantResponse = async (
+    text: string
+  ) => {
+    const cleanText = text.trim();
+
+    if (!cleanText) {
+      return;
+    }
+
+    try {
+      /*
+       * Stop a previous reply before speaking
+       * the newest one, so replies do not queue.
+       */
+      await Speech.stop();
+
+      Speech.speak(cleanText, {
+        language: "en-US",
+        rate: 0.85,
+        pitch: 1.0,
       });
-    },
-    []
-  );
-
-  /*
-   * Speak exactly the assistant response
-   * that is displayed on the screen.
-   */
- 
-
-  /*
-   * Scroll when new messages appear.
-   */
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      scrollToBottom(true);
-    }, 120);
-
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [
-    messages,
-    loading,
-    recognizing,
-    scrollToBottom,
-  ]);
-
-  /*
-   * Scroll again after keyboard opens.
-   */
-  useEffect(() => {
-    const keyboardEvent =
-      Platform.OS === "ios"
-        ? "keyboardWillShow"
-        : "keyboardDidShow";
-
-    const subscription =
-      Keyboard.addListener(
-        keyboardEvent,
-        () => {
-          setTimeout(() => {
-            scrollToBottom(false);
-          }, 150);
-        }
+    } catch (error) {
+      /*
+       * Do not throw from text-to-speech.
+       * The response remains visible even if
+       * the device cannot speak it.
+       */
+      console.log(
+        "Text-to-speech error:",
+        error
       );
+    }
+  };
 
-    return () => {
-      subscription.remove();
-    };
-  }, [scrollToBottom]);
-
-  /*
-   * Stop text-to-speech when leaving
-   * this screen.
-   */
-
-
-  /*
-   * Central function used for typed
-   * and voice messages.
-   */
   const submitMessage = async (
     text: string
   ) => {
@@ -160,12 +131,6 @@ export default function ChatScreen() {
     ) {
       return;
     }
-
-    /*
-     * Stop assistant speech if the user
-     * begins another request.
-     */
-    
 
     const userMessage:
       ChatMessage = {
@@ -184,31 +149,21 @@ export default function ChatScreen() {
     setMessage("");
     setLoading(true);
 
-    setTimeout(() => {
-      scrollToBottom(true);
-    }, 50);
-
     try {
       /*
+       * No userId.
+       *
        * JWT identifies the user.
-       * userId is NOT sent.
        */
       const result =
         await sendChatMessage({
           message: cleanMessage,
         });
 
-      /*
-       * This is the exact response returned
-       * by Spring Boot.
-       */
       const assistantResponse =
         result.response ||
         "Your request was completed.";
 
-      /*
-       * Display response on screen.
-       */
       const assistantMessage:
         ChatMessage = {
         id:
@@ -219,6 +174,9 @@ export default function ChatScreen() {
         text: assistantResponse,
       };
 
+      /*
+       * First display the reply in the chat.
+       */
       setMessages(
         (previous) => [
           ...previous,
@@ -227,16 +185,14 @@ export default function ChatScreen() {
       );
 
       /*
-       * Speak the SAME response shown
-       * in the assistant chat bubble.
+       * Then speak that exact same reply.
+       * This call is deliberately not awaited,
+       * so speech cannot delay the UI.
        */
-
+      void speakAssistantResponse(
+        assistantResponse
+      );
     } catch (error) {
-      const errorText =
-        error instanceof Error
-          ? error.message
-          : "Something went wrong. Please try again.";
-
       const errorMessage:
         ChatMessage = {
         id:
@@ -244,7 +200,10 @@ export default function ChatScreen() {
 
         sender: "assistant",
 
-        text: errorText,
+        text:
+          error instanceof Error
+            ? error.message
+            : "Something went wrong. Please try again.",
       };
 
       setMessages(
@@ -253,21 +212,11 @@ export default function ChatScreen() {
           errorMessage,
         ]
       );
-
-      /*
-       * Optional:
-       * also read friendly frontend errors
-       * aloud to the patient.
-       */
-
     } finally {
       setLoading(false);
     }
   };
 
-  /*
-   * Speech recognition started.
-   */
   useSpeechRecognitionEvent(
     "start",
     () => {
@@ -275,9 +224,6 @@ export default function ChatScreen() {
     }
   );
 
-  /*
-   * Speech recognition ended.
-   */
   useSpeechRecognitionEvent(
     "end",
     () => {
@@ -285,12 +231,6 @@ export default function ChatScreen() {
     }
   );
 
-  /*
-   * Speech recognition result.
-   *
-   * Final spoken sentence is
-   * automatically submitted.
-   */
   useSpeechRecognitionEvent(
     "result",
     (event) => {
@@ -323,9 +263,6 @@ export default function ChatScreen() {
     }
   );
 
-  /*
-   * Speech recognition error.
-   */
   useSpeechRecognitionEvent(
     "error",
     (event) => {
@@ -342,9 +279,6 @@ export default function ChatScreen() {
     }
   );
 
-  /*
-   * Start voice recognition.
-   */
   const startListening =
     async () => {
       if (loading) {
@@ -352,13 +286,6 @@ export default function ChatScreen() {
       }
 
       try {
-        /*
-         * Do not let the assistant speak
-         * while the patient is trying to
-         * talk to it.
-         */
-       
-
         const permission =
           await ExpoSpeechRecognitionModule
             .requestPermissionsAsync();
@@ -392,47 +319,20 @@ export default function ChatScreen() {
       }
     };
 
-  /*
-   * Stop microphone.
-   */
   const stopListening = () => {
     ExpoSpeechRecognitionModule.stop();
   };
 
-  /*
-   * Send typed message.
-   */
   const sendTypedMessage = () => {
     void submitMessage(message);
   };
 
-  /*
-   * Logout.
-   */
   const logout = async () => {
-    /*
-     * Stop microphone if active.
-     */
     if (recognizing) {
       ExpoSpeechRecognitionModule.stop();
     }
 
-    /*
-     * Stop assistant voice.
-     */
-   
-
     await signOut();
-  };
-
-  /*
-   * Keep latest conversation visible
-   * when keyboard opens.
-   */
-  const handleInputFocus = () => {
-    setTimeout(() => {
-      scrollToBottom(false);
-    }, 200);
   };
 
   return (
@@ -440,16 +340,14 @@ export default function ChatScreen() {
       style={styles.container}
       edges={["top"]}
     >
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={
-          Platform.OS === "ios"
-            ? "padding"
-            : "height"
-        }
-      >
-        {/* Header */}
-
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={
+        Platform.OS === "ios"
+          ? "padding"
+          : "height"
+      }
+    >
         <View style={styles.header}>
           <View style={styles.logo}>
             <Text
@@ -480,7 +378,6 @@ export default function ChatScreen() {
             onPress={logout}
             accessibilityRole="button"
             accessibilityLabel="Log out"
-            activeOpacity={0.8}
           >
             <Text
               style={
@@ -492,8 +389,6 @@ export default function ChatScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Conversation */}
-
         <ScrollView
           ref={scrollViewRef}
           style={styles.chatArea}
@@ -501,16 +396,12 @@ export default function ChatScreen() {
             styles.chatContent
           }
           keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
           onContentSizeChange={() => {
-            scrollToBottom(true);
-          }}
-          onLayout={() => {
-            scrollToBottom(false);
+            scrollViewRef.current?.scrollToEnd({
+              animated: true,
+            });
           }}
         >
-          {/* Welcome */}
-
           {messages.length === 0 && (
             <View
               style={
@@ -569,8 +460,6 @@ export default function ChatScreen() {
             </View>
           )}
 
-          {/* Messages */}
-
           {messages.map(
             (item) => (
               <View
@@ -621,8 +510,6 @@ export default function ChatScreen() {
             )
           )}
 
-          {/* Loading */}
-
           {loading && (
             <View
               style={[
@@ -658,17 +545,7 @@ export default function ChatScreen() {
               </View>
             </View>
           )}
-
-          {messages.length > 0 && (
-            <View
-              style={
-                styles.bottomSpacer
-              }
-            />
-          )}
         </ScrollView>
-
-        {/* Listening */}
 
         {recognizing && (
           <View
@@ -685,8 +562,6 @@ export default function ChatScreen() {
             </Text>
           </View>
         )}
-
-        {/* Input */}
 
         <View
           style={
@@ -708,12 +583,7 @@ export default function ChatScreen() {
               !loading &&
               !recognizing
             }
-            onFocus={
-              handleInputFocus
-            }
           />
-
-          {/* Microphone */}
 
           <TouchableOpacity
             style={[
@@ -729,12 +599,6 @@ export default function ChatScreen() {
             }
             disabled={loading}
             activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel={
-              recognizing
-                ? "Stop listening"
-                : "Speak to assistant"
-            }
           >
             <Text
               style={styles.voiceIcon}
@@ -744,8 +608,6 @@ export default function ChatScreen() {
                 : "🎤"}
             </Text>
           </TouchableOpacity>
-
-          {/* Send */}
 
           <TouchableOpacity
             style={[
@@ -766,9 +628,6 @@ export default function ChatScreen() {
               loading ||
               recognizing
             }
-            activeOpacity={0.8}
-            accessibilityRole="button"
-            accessibilityLabel="Send message"
           >
             <Text
               style={styles.sendText}
@@ -836,7 +695,6 @@ const styles =
       borderRadius: 9,
       backgroundColor: "#F2F0FF",
     },
-
     logoutText: {
       fontSize: 13,
       fontWeight: "700",
@@ -850,11 +708,7 @@ const styles =
     chatContent: {
       flexGrow: 1,
       padding: 16,
-      paddingBottom: 16,
-    },
-
-    bottomSpacer: {
-      height: 12,
+      paddingBottom: 25,
     },
 
     welcomeContainer: {
