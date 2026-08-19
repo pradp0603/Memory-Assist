@@ -28,5 +28,4 @@ public interface ReminderService {
 
     List<ReminderResponse> getRemindersForDate( Long userId, LocalDate date);
 
-
 }

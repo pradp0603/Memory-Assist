@@ -77,7 +77,7 @@ public class IntentRouterServiceImpl implements IntentRouterService {
                     storeReminder(userId, message, aiResponse);
 
             case GET_TODAYS_REMINDERS ->
-                    getTodaysReminders(userId);
+                    getTodaysReminders(userId, aiResponse);
 
             case MARK_REMINDER_COMPLETE ->
                     reminderCompleted(userId, aiResponse);
@@ -98,6 +98,7 @@ public class IntentRouterServiceImpl implements IntentRouterService {
         memoryRequest.setMemoryType(aiResponse.getMemoryType());
         memoryRequest.setTitle(aiResponse.getTitle());
         memoryRequest.setValue(aiResponse.getValue());
+        memoryRequest.setMemoryTypeName(aiResponse.getMemoryTypeName());
 
         memoryService.saveMemory(memoryRequest);
 
@@ -106,6 +107,13 @@ public class IntentRouterServiceImpl implements IntentRouterService {
     }
 
     private ChatResponse retrieveMemory(Long userId, AIResponse aiResponse) {
+
+        if (aiResponse.getMemoryType() == MemoryType.OTHER && aiResponse.getMemoryTypeName() != null) {
+
+            MemoryResponse response = memoryService.getOtherMemory(userId, aiResponse.getMemoryTypeName());
+
+            return new ChatResponse(response.getValue());
+        }
 
         if (aiResponse.getMemoryType() == MemoryType.OBJECT_LOCATION) {
 
@@ -200,14 +208,22 @@ public class IntentRouterServiceImpl implements IntentRouterService {
 
 
 
-    private ChatResponse getTodaysReminders(Long userId) {
+    private ChatResponse getTodaysReminders(Long userId, AIResponse aiResponse) {
+
+        LocalDate requestedDate;
+
+        if (aiResponse.getReminderDateTime() != null) {
+            requestedDate = aiResponse.getReminderDateTime().toLocalDate();
+        } else {
+            requestedDate = LocalDate.now();
+        }
 
         List<ReminderResponse> reminders =
-                reminderService.getTodaysReminders(
-                        userId);
+                reminderService.getRemindersForDate(
+                        userId,
+                        requestedDate);
 
         return responseFormatterService.todaysReminders(reminders);
-
     }
 
     private ChatResponse deleteMemory(Long userId,

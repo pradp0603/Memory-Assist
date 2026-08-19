@@ -17,4 +17,9 @@ public interface MemoryRepository extends JpaRepository<Memory, Long> {
 
     Optional<Memory> findByUser_IdAndTypeAndTitleIgnoreCase(Long userId, MemoryType type, String title);
 
+    Optional<Memory> findByUser_IdAndTypeAndMemoryTypeNameIgnoreCase(
+            Long userId,
+            MemoryType type,
+            String memoryTypeName);
+
 }

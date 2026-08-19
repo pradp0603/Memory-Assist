@@ -15,4 +15,6 @@ public class MemoryResponse {
 
     private String value;
 
+    private String memoryTypeName;
+
 }

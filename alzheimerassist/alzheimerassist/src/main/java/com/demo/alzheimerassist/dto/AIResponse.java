@@ -21,6 +21,8 @@ public class AIResponse {
     @JsonSetter(nulls = Nulls.SKIP)
     private MemoryType memoryType;
 
+    private String memoryTypeName;
+
     private String title;
 
     private String value;
@@ -35,6 +37,14 @@ public class AIResponse {
     private LocalDateTime reminderDateTime;
 
     private String reminderText;
+
+    public String getMemoryTypeName() {
+        return memoryTypeName;
+    }
+
+    public void setMemoryTypeName(String memoryTypeName) {
+        this.memoryTypeName = memoryTypeName;
+    }
 
     public String getRelationshipName() {
         return relationshipName;

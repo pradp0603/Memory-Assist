@@ -21,6 +21,9 @@ public class Memory {
     @Enumerated(EnumType.STRING)
     private MemoryType type;
 
+    @Column(name = "memory_type_name")
+    private String memoryTypeName;
+
     private String title;
 
     @Column(length = 5000)

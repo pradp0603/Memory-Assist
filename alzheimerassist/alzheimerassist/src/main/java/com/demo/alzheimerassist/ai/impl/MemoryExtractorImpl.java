@@ -156,6 +156,89 @@ public class MemoryExtractorImpl implements MemoryExtractor {
                 }
 
                 ----------------------------------------
+                
+                BANK ACCOUNT INFORMATION
+                
+                If the user provides a bank account number and/or sort code,
+                use:
+                
+                "memoryType": "OTHER"
+                "memoryTypeName": "BANK_ACCOUNT"
+                
+                The title must be:
+                
+                "Bank Account"
+                
+                If both account number and sort code are provided,
+                store both values together in the value field.
+                
+                Example:
+                
+                User:
+                My bank account number is 123456 and sort code is 55-55-66.
+                
+                Output:
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Account Number: 123456; Sort Code: 55-55-66"
+                }
+                
+                If only the account number is provided:
+                
+                User:
+                My bank account number is 123456.
+                
+                Output:
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Account Number: 123456"
+                }
+                
+                If only the sort code is provided:
+                
+                User:
+                My sort code is 55-55-66.
+                
+                Output:
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Sort Code: 55-55-66"
+                }
+                
+                User:
+                My bank account number is 123456 and sort code is 55-55-66.
+                
+                Output:
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Account Number: 123456; Sort Code: 55-55-66"
+                }
+                
+                User:
+                What is my bank account number and sort code?
+                
+                Output:
+                {
+                  "intent": "RETRIEVE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": null
+                }
+                
+                ----------------------------------------
 
                 OBJECT_LOCATION
 
@@ -192,24 +275,34 @@ public class MemoryExtractorImpl implements MemoryExtractor {
 
                 ----------------------------------------
 
-                OTHER
-
-                Use OTHER when the memory does not match:
-
+                --------------------------------------------------
+                OTHER MEMORY TYPES
+                --------------------------------------------------
+                
+                If the information does not match one of the standard
+                memory types, use:
+                
+                "memoryType": "OTHER"
+                
+                Put the specific category into:
+                
+                "memoryTypeName"
+                
+                Never create a new value for memoryType.
+                
+                Valid memoryType values are only:
+                
                 ADDRESS
                 PHONE
                 EMAIL
                 PASSWORD
                 OBJECT_LOCATION
-
-                Put the original category in memoryTypeName.
-
-                Example:
-
-                My passport number is P123456.
-
-                Output:
-
+                OTHER
+                
+                Examples:
+                
+                Passport number:
+                
                 {
                   "intent": "STORE_MEMORY",
                   "memoryType": "OTHER",
@@ -217,20 +310,92 @@ public class MemoryExtractorImpl implements MemoryExtractor {
                   "title": "Passport Number",
                   "value": "P123456"
                 }
-
-                Example:
-
-                What is my passport number?
-
-                Output:
-
+                
+                Insurance number:
+                
                 {
-                  "intent": "RETRIEVE_MEMORY",
+                  "intent": "STORE_MEMORY",
                   "memoryType": "OTHER",
-                  "memoryTypeName": "PASSPORT_NUMBER",
-                  "title": "Passport Number",
-                  "value": null
+                  "memoryTypeName": "INSURANCE_NUMBER",
+                  "title": "Insurance Number",
+                  "value": "ABC123"
                 }
+                
+                --------------------------------------------------
+                BANK ACCOUNT
+                --------------------------------------------------
+                
+                Bank account information must use:
+                
+                "memoryType": "OTHER"
+                
+                "memoryTypeName": "BANK_ACCOUNT"
+                
+                "title": "Bank Account"
+                
+                If the user provides both account number and sort code,
+                store both values together.
+                
+                Example:
+                
+                User:
+                My bank account number is 123456 and sort code is 55-55-66.
+                
+                Output:
+                
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Account Number: 123456; Sort Code: 55-55-66"
+                }
+                
+                If only the account number is provided:
+                
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Account Number: 123456"
+                }
+                
+                If only the sort code is provided:
+                
+                {
+                  "intent": "STORE_MEMORY",
+                  "memoryType": "OTHER",
+                  "memoryTypeName": "BANK_ACCOUNT",
+                  "title": "Bank Account",
+                  "value": "Sort Code: 55-55-66"
+                }
+                
+                --------------------------------------------------
+                RETRIEVING BANK ACCOUNT
+                --------------------------------------------------
+                
+                Questions such as:
+                
+                What is my bank account number?
+                
+                What is my sort code?
+                
+                What are my bank account details?
+                
+                What is my account number and sort code?
+                
+                must use:
+                
+                "intent": "RETRIEVE_MEMORY"
+                
+                "memoryType": "OTHER"
+                
+                "memoryTypeName": "BANK_ACCOUNT"
+                
+                "title": "Bank Account"
+                
+                "value": null
 
                 ========================================
                 RETRIEVE_MEMORY

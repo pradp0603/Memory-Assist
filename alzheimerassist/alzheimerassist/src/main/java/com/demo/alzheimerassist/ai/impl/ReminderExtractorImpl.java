@@ -1,12 +1,12 @@
 package com.demo.alzheimerassist.ai.impl;
 
-
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
 import com.demo.alzheimerassist.ai.ReminderExtractor;
 import com.demo.alzheimerassist.dto.AIResponse;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 
@@ -18,10 +18,9 @@ public class ReminderExtractorImpl
     private final ChatClient chatClient;
 
 
-    public ReminderExtractorImpl(ChatClient chatClient){
+    public ReminderExtractorImpl(ChatClient chatClient) {
         this.chatClient = chatClient;
     }
-
 
 
     @Override
@@ -29,19 +28,23 @@ public class ReminderExtractorImpl
 
         LocalDateTime now = LocalDateTime.now();
 
+        /*
+         * Determine the requested date in Java.
+         *
+         * This prevents the AI from incorrectly interpreting
+         * "tomorrow" as today.
+         */
+        LocalDate requestedDate = determineRequestedDate(message, now.toLocalDate());
+
 
         String prompt = """
 You are a reminder information extraction engine for an Alzheimer's Assistant.
 
 The intent has ALREADY been determined by another component.
 
-DO NOT determine the intent.
+DO NOT determine the intent again.
 
-Your job is ONLY to extract reminder information such as:
-
-- reminder text
-- reminder date/time
-- repeat type
+Your job is ONLY to extract reminder information.
 
 Return ONLY valid JSON.
 
@@ -49,23 +52,51 @@ Never return Markdown.
 Never return explanations.
 Never return code fences.
 
-The current date and time is:
+--------------------------------------------------
+CURRENT DATE AND TIME
+--------------------------------------------------
 
 %s
 
 --------------------------------------------------
-IMPORTANT
+DETECTED INTENT
 --------------------------------------------------
-
-The previously detected intent is:
 
 %s
 
-You MUST use this exact intent in the JSON response.
+You MUST return exactly this intent.
 
-Never change it.
+Never change the intent.
 
 Never return GET_REMINDERS.
+
+--------------------------------------------------
+REQUESTED REMINDER DATE
+--------------------------------------------------
+
+The application has already determined the requested calendar date.
+
+Requested date:
+
+%s
+
+IMPORTANT:
+
+If the user asks for:
+
+"today"
+
+use the requested date above.
+
+If the user asks for:
+
+"tomorrow"
+
+use the requested date above.
+
+DO NOT calculate the date yourself.
+
+DO NOT change the requested date.
 
 --------------------------------------------------
 VALID INTENTS
@@ -76,35 +107,13 @@ GET_TODAYS_REMINDERS
 MARK_REMINDER_COMPLETE
 
 --------------------------------------------------
-DATE RULES
---------------------------------------------------
-
-"today" means the current calendar date.
-
-"tomorrow" means the next calendar date.
-
-"yesterday" means the previous calendar date.
-
-For example, if the current date is:
-
-2026-08-13
-
-then:
-
-today = 2026-08-13
-tomorrow = 2026-08-14
-yesterday = 2026-08-12
-
---------------------------------------------------
 GET_TODAYS_REMINDERS
 --------------------------------------------------
 
-When the user asks for reminders for a particular day,
-return:
+This intent is used when the user asks to see reminders
+for a particular calendar date.
 
-"intent": "GET_TODAYS_REMINDERS"
-
-This includes:
+Examples:
 
 What are my reminders today?
 
@@ -118,17 +127,24 @@ Do I have any reminders tomorrow?
 
 Show me my reminders for tomorrow.
 
-For GET_TODAYS_REMINDERS:
+For this intent return:
 
-reminderText = null
+"reminderText": null
 
-repeatType = null
+"repeatType": null
 
-reminderDateTime = the requested date at 00:00:00
+"reminderDateTime":
+the requested date at 00:00:00
+
+IMPORTANT:
+
+Use EXACTLY the requested date supplied by the application.
 
 --------------------------------------------------
 STORE_REMINDER
 --------------------------------------------------
+
+Use this when the user wants to create a reminder.
 
 Extract:
 
@@ -140,9 +156,9 @@ Examples:
 
 Remind me to take medicine at 8 PM.
 
-Remind me every Sunday to call my daughter.
-
 Remind me tomorrow to call my daughter.
+
+Remind me every Sunday to call my daughter.
 
 --------------------------------------------------
 MARK_REMINDER_COMPLETE
@@ -159,10 +175,28 @@ I have completed my medicine.
 Medicine completed.
 
 --------------------------------------------------
+DATE RULES
+--------------------------------------------------
+
+The application has already calculated the requested date.
+
+Do not calculate dates yourself.
+
+The date must be returned in:
+
+yyyy-MM-ddTHH:mm:ss
+
+format.
+
+For GET_TODAYS_REMINDERS, the time must be:
+
+00:00:00
+
+--------------------------------------------------
 FIELD RULES
 --------------------------------------------------
 
-Always return:
+Always return these four fields:
 
 intent
 reminderText
@@ -178,8 +212,12 @@ USER MESSAGE
 --------------------------------------------------
 
 %s
-""".formatted(now, intent, message);
-
+""".formatted(
+                now,
+                intent,
+                requestedDate.atStartOfDay(),
+                message
+        );
 
 
         return chatClient
@@ -187,6 +225,31 @@ USER MESSAGE
                 .user(prompt)
                 .call()
                 .entity(AIResponse.class);
+    }
+
+
+    /**
+     * Determines the calendar date requested by the user.
+     *
+     * This is deliberately kept simple so that existing
+     * reminder functionality is not affected.
+     */
+    private LocalDate determineRequestedDate(
+            String message,
+            LocalDate currentDate) {
+
+        String text = message.toLowerCase();
+
+        if (text.contains("tomorrow")) {
+            return currentDate.plusDays(1);
+        }
+
+        if (text.contains("yesterday")) {
+            return currentDate.minusDays(1);
+        }
+
+        // Default to today.
+        return currentDate;
     }
 
 }

@@ -28,4 +28,6 @@ public interface MemoryService {
 
     void deleteMemory(Long userId, MemoryType memoryType, String title);
 
+    MemoryResponse getOtherMemory(Long userId, String memoryTypeName);
+
 }

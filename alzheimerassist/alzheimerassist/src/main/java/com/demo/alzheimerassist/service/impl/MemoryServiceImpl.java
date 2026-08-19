@@ -64,7 +64,7 @@ public class MemoryServiceImpl implements MemoryService {
         }
 
         memory.setType(request.getMemoryType());
-
+        memory.setMemoryTypeName(request.getMemoryTypeName());
         memory.setTitle(request.getTitle());
         memory.setValue(request.getValue());
         memory.setUpdatedDate(LocalDateTime.now());
@@ -87,6 +87,22 @@ public class MemoryServiceImpl implements MemoryService {
     @Override
     public MemoryResponse getMemory(Long userId, MemoryType type) {
         return null;
+    }
+
+    public MemoryResponse getOtherMemory(
+            Long userId,
+            String memoryTypeName) {
+
+        Memory memory = memoryRepository
+                .findByUser_IdAndTypeAndMemoryTypeNameIgnoreCase(
+                        userId,
+                        MemoryType.OTHER,
+                        memoryTypeName)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException(
+                                "I couldn't find that information."));
+
+        return convertToResponse(memory);
     }
 
     @Override
@@ -129,6 +145,7 @@ public class MemoryServiceImpl implements MemoryService {
 
         memory.setType(request.getMemoryType());
         memory.setTitle(request.getTitle());
+        memory.setMemoryTypeName(request.getMemoryTypeName());
         memory.setValue(request.getValue());
 
         Memory updated = memoryRepository.save(memory);
@@ -163,6 +180,7 @@ public class MemoryServiceImpl implements MemoryService {
         response.setType(memory.getType());
         response.setTitle(memory.getTitle());
         response.setValue(memory.getValue());
+        response.setMemoryTypeName(memory.getMemoryTypeName());
 
         return response;
     }

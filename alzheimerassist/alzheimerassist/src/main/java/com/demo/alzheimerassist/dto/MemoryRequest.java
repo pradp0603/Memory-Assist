@@ -14,4 +14,7 @@ public class MemoryRequest {
 
     private String value;
 
+    private String memoryTypeName;
+
+
 }

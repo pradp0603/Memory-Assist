@@ -102,7 +102,17 @@ public class IntentDetectorImpl implements IntentDetector {
                 I left my keys on the dining table.
                 → STORE_MEMORY
 
-
+                "My bank account number is 123456."
+                "My sort code is 55-55-66."
+                "My bank account number is 123456 and sort code is 55-55-66."
+                
+                My bank account number is 123456
+                        ↓
+                STORE_MEMORY
+                
+                What is my bank account number?
+                        ↓
+                RETRIEVE_MEMORY
                 ========================================
                 VERY IMPORTANT PHONE NUMBER RULE
                 ========================================
@@ -264,6 +274,62 @@ public class IntentDetectorImpl implements IntentDetector {
                 Questions about ANOTHER PERSON'S contact information
                 must use GET_CONTACT.
 
+                --------------------------------------------------
+                BANK ACCOUNT RETRIEVAL
+                --------------------------------------------------
+                
+                Questions asking for the user's own bank account information
+                must use RETRIEVE_MEMORY.
+                
+                This includes questions about:
+                
+                - bank account number
+                - account number
+                - sort code
+                - bank details
+                - bank account details
+                - account and sort code
+                
+                Examples:
+                
+                "What is my bank account number?"
+                → RETRIEVE_MEMORY
+                
+                "What is my account number?"
+                → RETRIEVE_MEMORY
+                
+                "What is my sort code?"
+                → RETRIEVE_MEMORY
+                
+                "What is my bank sort code?"
+                → RETRIEVE_MEMORY
+                
+                "What are my bank details?"
+                → RETRIEVE_MEMORY
+                
+                "What are my bank account details?"
+                → RETRIEVE_MEMORY
+                
+                "What is my account number and sort code?"
+                → RETRIEVE_MEMORY
+                
+                "Do you remember my bank account number?"
+                → RETRIEVE_MEMORY
+                
+                "Do you remember my sort code?"
+                → RETRIEVE_MEMORY
+                
+                IMPORTANT:
+                
+                These are the user's own stored information.
+                
+                Therefore they must NOT be classified as UNKNOWN.
+                They must NOT be classified as GET_CONTACT.
+                They must NOT be classified as GET_TODAYS_REMINDERS.
+                
+                The correct intent is always:
+                
+                RETRIEVE_MEMORY
 
                 ========================================
                 DELETE_MEMORY
